@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sklep - Single File</title>
+  <style>
+    :root{--accent:#0ea5a4;--bg:#0f172a;--card:#111827;--muted:#94a3b8}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;line-height:1.4;margin:0;background:linear-gradient(180deg,#071129 0%, #071a2a 100%);color:#e6eef6}
+    header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent);backdrop-filter:blur(6px)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#042027}
+    h1{font-size:18px;margin:0}
+    .search{display:flex;gap:8px;align-items:center}
+    .search input{padding:8px 12px;border-radius:10px;border:0;min-width:220px}
+    .main{display:grid;grid-template-columns:1fr 340px;gap:20px;padding:24px}
+    .catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:14px;border-radius:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+    .card img{width:100%;height:140px;object-fit:cover;border-radius:10px}
+    .card h3{margin:10px 0 6px;font-size:16px}
+    .card p{margin:0;font-size:13px;color:var(--muted)}
+    .price-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+    button{background:var(--accent);border:0;padding:8px 12px;border-radius:10px;color:#022525;cursor:pointer;font-weight:600}
+    .filters{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+    select,input[type=range]{padding:8px;border-radius:10px;border:0}
+    /* cart */
+    .cart{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:16px;border-radius:12px;position:sticky;top:24px;height:fit-content}
+    .cart h2{margin:0 0 10px}
+    .cart-items{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto;padding-right:6px}
+    .cart-item{display:flex;gap:10px;align-items:center}
+    .cart-item img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+    .qty{display:flex;gap:6px;align-items:center}
+    .muted{color:var(--muted)}
+    footer{padding:18px 28px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:900px){.main{grid-template-columns:1fr}.cart{position:static;margin-top:12px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">SK</div>
+      <div>
+        <h1>Sklep Ziom</h1>
+        <div class="muted">Prosty demo sklep — klikasz, bierzesz</div>
+      </div>
+    </div>
+    <div class="search">
+      <input id="q" placeholder="Szukaj (np. koszulka, kubek)" />
+      <select id="sort">
+        <option value="popular">Sortuj: Popularne</option>
+        <option value="price-asc">Cena rosnąco</option>
+        <option value="price-desc">Cena malejąco</option>
+      </select>
+      <button id="clear">Wyczyść koszyk</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div>
+      <div class="filters">
+        <label class="muted">Kategoria:</label>
+        <select id="category">
+          <option value="all">Wszystko</option>
+        </select>
+        <label class="muted">Max cena:</label>
+        <input id="maxPrice" type="range" min="0" max="200" value="200" />
+        <div class="muted" id="priceVal">200 zł</div>
+      </div>
+
+      <div class="catalog" id="catalog"></div>
+    </div>
+
+    <aside class="cart">
+      <h2>Koszyk <span class="muted">(e) dla ziomków</span></h2>
+      <div class="cart-items" id="cartItems"></div>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="muted">Suma:</div>
+          <div id="total" style="font-weight:700;font-size:18px">0 zł</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="checkout">Idę do kasy</button>
+          <button id="empty" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);">Opróżnij</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>Demo shop — nic realnego nie wysyła. Projekt: twój ziomek AI.</footer>
+
+  <script>
+    // Sample products
+    const products = [
+      {id:1,title:'Koszulka "Ziom"',price:49,category:'Ubrania',desc:'Miękka bawełna, mega wygodna.',img:'https://picsum.photos/seed/1/400/300'},
+      {id:2,title:'Kubek Poranny',price:29,category:'Dom',desc:'Kubek na kawę — trzyma ciepło.',img:'https://picsum.photos/seed/2/400/300'},
+      {id:3,title:'Czapka Snapback',price:69,category:'Ubrania',desc:'Stylówka na luzie.',img:'https://picsum.photos/seed/3/400/300'},
+      {id:4,title:'Plakat A3',price:39,category:'Dekor',desc:'Poster do pokoju.',img:'https://picsum.photos/seed/4/400/300'},
+      {id:5,title:'Słuchawki BT',price:129,category:'Elektronika',desc:'Dobra jakość dźwięku.',img:'https://picsum.photos/seed/5/400/300'},
+      {id:6,title:'Plecak Miejski',price:159,category:'Akcesoria',desc:'Spoko na uczelnię i nie tylko.',img:'https://picsum.photos/seed/6/400/300'}
+    ];
+
+    // Init categories
+    const categorySelect = document.getElementById('category');
+    const cats = ['Wszystko',...new Set(products.map(p=>p.category))];
+    cats.forEach(c=>{
+      const val = c==='Wszystko' ? 'all' : c;
+      const opt = document.createElement('option'); opt.value=val; opt.textContent=c; categorySelect.appendChild(opt);
+    });
+
+    // State
+    let cart = JSON.parse(localStorage.getItem('cart')||'{}');
+
+    const catalogEl = document.getElementById('catalog');
+    const cartItemsEl = document.getElementById('cartItems');
+    const totalEl = document.getElementById('total');
+    const q = document.getElementById('q');
+    const sort = document.getElementById('sort');
+    const maxPrice = document.getElementById('maxPrice');
+    const priceVal = document.getElementById('priceVal');
+
+    function save(){localStorage.setItem('cart',JSON.stringify(cart));}
+
+    function renderCatalog(){
+      const term = q.value.trim().toLowerCase();
+      const cat = categorySelect.value;
+      const max = Number(maxPrice.value);
+      let list = products.filter(p=>p.price<=max);
+      if(cat!=='all') list = list.filter(p=>p.category===cat);
+      if(term) list = list.filter(p=> (p.title+p.desc+p.category).toLowerCase().includes(term));
+      if(sort.value==='price-asc') list.sort((a,b)=>a.price-b.price);
+      if(sort.value==='price-desc') list.sort((a,b)=>b.price-a.price);
+      catalogEl.innerHTML='';
+      list.forEach(p=>{
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <img src="${p.img}" alt="${p.title}" />
+          <h3>${p.title}</h3>
+          <p class="muted">${p.desc}</p>
+          <div class="price-row">
+            <div style="font-weight:700">${p.price} zł</div>
+            <button data-id="${p.id}">Dodaj</button>
+          </div>`;
+        catalogEl.appendChild(card);
+      });
+      // attach
+      catalogEl.querySelectorAll('button').forEach(b=>b.addEventListener('click',e=>{
+        const id = e.currentTarget.dataset.id; addToCart(Number(id));
+      }));
+    }
+
+    function renderCart(){
+      cartItemsEl.innerHTML='';
+      const ids = Object.keys(cart);
+      if(ids.length===0){cartItemsEl.innerHTML='<div class="muted">Koszyk pusty — weź coś ziomek</div>'; totalEl.textContent='0 zł'; return}
+      let sum=0;
+      ids.forEach(id=>{
+        const p = products.find(x=>x.id==id);
+        const qty = cart[id];
+        sum += p.price*qty;
+        const el = document.createElement('div'); el.className='cart-item';
+        el.innerHTML = `
+          <img src="${p.img}" alt="${p.title}" />
+          <div style="flex:1">
+            <div style="font-weight:700">${p.title}</div>
+            <div class="muted">${p.price} zł × ${qty} = ${p.price*qty} zł</div>
+          </div>
+          <div class="qty">
+            <button data-id="${id}" class="dec">−</button>
+            <div style="min-width:22px;text-align:center">${qty}</div>
+            <button data-id="${id}" class="inc">+</button>
+          </div>`;
+        cartItemsEl.appendChild(el);
+      });
+      totalEl.textContent = sum + ' zł';
+      // attach inc/dec
+      cartItemsEl.querySelectorAll('.inc').forEach(b=>b.addEventListener('click',e=>{
+        const id=e.currentTarget.dataset.id; cart[id] = (cart[id]||0)+1; save(); renderCart(); renderCatalog();
+      }));
+      cartItemsEl.querySelectorAll('.dec').forEach(b=>b.addEventListener('click',e=>{
+        const id=e.currentTarget.dataset.id; cart[id] = (cart[id]||0)-1; if(cart[id]<=0) delete cart[id]; save(); renderCart(); renderCatalog();
+      }));
+    }
+
+    function addToCart(id){ cart[id] = (cart[id]||0)+1; save(); renderCart(); animateAdd(id); }
+
+    function animateAdd(id){
+      // tiny visual feedback
+      const btn = document.querySelector(`button[data-id='${id}']`);
+      if(!btn) return; btn.textContent='Dodano!'; setTimeout(()=>btn.textContent='Dodaj',600);
+    }
+
+    // actions
+    document.getElementById('clear').addEventListener('click',()=>{ localStorage.removeItem('cart'); cart={}; renderCart(); });
+    document.getElementById('empty').addEventListener('click',()=>{ cart={}; save(); renderCart(); });
+    document.getElementById('checkout').addEventListener('click',()=>{
+      if(Object.keys(cart).length===0){alert('Koszyk pusty, weź coś!'); return}
+      // mock checkout
+      const items = Object.entries(cart).map(([id,qty])=>{
+        const p = products.find(x=>x.id==id); return `${p.title} x${qty}`;
+      }).join('\n');
+      alert('Zamówienie:\n'+items+'\n\nTo demo — płatności nie ma. Dzięki!');
+      cart={}; save(); renderCart();
+    });
+
+    // inputs
+    q.addEventListener('input',renderCatalog);
+    sort.addEventListener('change',renderCatalog);
+    categorySelect.addEventListener('change',renderCatalog);
+    maxPrice.addEventListener('input',()=>{priceVal.textContent = maxPrice.value + ' zł'; renderCatalog();});
+
+    // init
+    renderCatalog(); renderCart();
+  </script>
+</body>
+</html>
